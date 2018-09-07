@@ -4,10 +4,9 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import com.example.klitaviy.retrypolicytest.core.BadCredentialsException
-import com.example.klitaviy.retrypolicytest.core.InitializationAction
 import com.example.klitaviy.retrypolicytest.core.Logger
-import com.example.klitaviy.retrypolicytest.core.SearchAction
+import com.example.klitaviy.retrypolicytest.core.actions.InitializationAction
+import com.example.klitaviy.retrypolicytest.core.actions.SearchAction
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -25,13 +24,14 @@ class MainActivity : AppCompatActivity() {
             InitializationAction.provide()
                     .andThen(Completable.defer { SearchAction.provide() })
                     .retryWhen {
+                        // TODO - Check retries count
                         it.flatMap { error ->
-                            if (error is BadCredentialsException) {
-                                Logger.log("MainActivity - Forward Error - ${error.message}")
-                                Flowable.error(error)
-                            } else {
+                            if (error is NonFatalException) {
                                 Logger.log("MainActivity - Run Retry - ${error.message}")
                                 Flowable.just("")
+                            } else {
+                                Logger.log("MainActivity - Forward Error - ${error.message}")
+                                Flowable.error(error)
                             }
                         }
                     }
